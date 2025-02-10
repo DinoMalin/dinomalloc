@@ -23,11 +23,13 @@
 
 #define NULL ((void*)0)
 
+void *tiny = NULL;
+void *medium = NULL;
 void *summary = NULL;
 
 int get_size(void *addr) {
 	for (int i = 0; i < SUMMARY; i+=2) {
-		void *this_addr = CASTV(summary+i);
+		void *this_addr = *CASTV(summary+i); // segfault ?
 		int size = *CAST(summary+i+1);
 		if (addr >= this_addr && addr <= this_addr + size)
 			return size;
@@ -61,13 +63,12 @@ int add_to_summary(void *addr, int size) {
 }
 
 void *ft_malloc(size_t len) {
-	static void *tiny = NULL;
-	static void *medium = NULL;
-
 	if (!tiny || !medium) {
 		tiny = ALLOC(NULL, TINY);
 		medium = ALLOC(NULL, MEDIUM);
 		summary = ALLOC(NULL, SUMMARY);
+		if (summary != MAP_FAILED)
+			ft_bzero(summary, SUMMARY);
 	}
 	if (tiny == MAP_FAILED || medium == MAP_FAILED || summary == MAP_FAILED)
 		return NULL;
@@ -97,6 +98,36 @@ void ft_free(void *addr) {
 		munmap(addr, get_size(addr));
 }
 
+
+void valgrind() {
+	ft_printf("TINY - 0x%p\n", tiny);
+	for (int i = 0; i < SUMMARY; i++) {
+		void *addr = *CASTV(summary+i);
+		int size = *CAST(summary+i+1);
+		if (addr >= tiny && addr < tiny + TINY)
+			ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	}
+
+	ft_printf("MEDIUM - 0x%p\n", medium);
+	for (int i = 0; i < SUMMARY; i++) {
+		void *addr = *CASTV(summary+i);
+		int size = *CAST(summary+i+1);
+		if (addr >= medium && addr < medium + MEDIUM)
+			ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	}
+
+	ft_printf("LARGE - everything else\n", medium);
+	for (int i = 0; i < SUMMARY; i++) {
+		void *addr = *CASTV(summary+i);
+		int size = *CAST(summary+i+1);
+		if (addr >= tiny && addr < tiny + TINY)
+			continue;
+		if (addr >= medium && addr < medium + MEDIUM)
+			continue;
+		ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	}
+}
+
 int main() {
 	char *test = ft_malloc(5);
 
@@ -108,6 +139,7 @@ int main() {
 		test[4] = '\0';
 		printf("test: [%s]\n", test);
 	}
+	valgrind();
 
 	ft_free(test);
 }
