@@ -136,24 +136,33 @@ void ft_free(void *addr) {
 
 void valgrind() {
 	int t = SUMMARY/sizeof(data);
+	size_t total = 0;
 
-	ft_printf("TINY - 0x%p\n", tiny);
+	ft_printf("TINY : 0x%p\n", tiny);
 	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == ztiny)
-			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
+		if (summary[i].zone == ztiny) {
+			DISPLAY(summary[i]);
+			total += summary[i].len;
+		}
 	}
 
-	ft_printf("MEDIUM - 0x%p\n", medium);
+	ft_printf("MEDIUM : 0x%p\n", medium);
 	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == zmedium)
-			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
+		if (summary[i].zone == zmedium) {
+			DISPLAY(summary[i]);
+			total += summary[i].len;
+		}
 	}
 
-	ft_printf("LARGE - everything else\n");
+	ft_printf("LARGE : everything else\n");
 	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == zlarge)
-			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
+		if (summary[i].zone == zlarge) {
+			DISPLAY(summary[i]);
+			total += summary[i].len;
+		}
 	}
+
+	ft_printf("TOTAL : %u bytes\n", total);
 }
 
 int main() {

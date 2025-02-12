@@ -11,6 +11,13 @@
 #define ALLOC(len) \
 	mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
+#define DISPLAY(item)						\
+	ft_printf("0x%p - 0x%p : %u bytes\n",	\
+		item.addr,							\
+		(void*)(item.addr + item.len),		\
+		summary[i].len						\
+	);
+
 #define NULL ((void*)0)
 
 typedef enum {
