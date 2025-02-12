@@ -8,6 +8,9 @@
 #define MEDIUM (size_t)(getpagesize() * 4)
 #define SUMMARY (getpagesize() * 2)
 
+#define tiny summary->addr
+#define medium (summary+1)->addr
+
 #define ALLOC(len) \
 	mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
@@ -31,3 +34,13 @@ typedef struct {
 	void	*addr;
 	size_t	len;
 } data;
+
+extern data *summary;
+
+void *ft_malloc(size_t len);
+void ft_free(void *addr);
+void *ft_realloc(void *addr, size_t len);
+void valgrind();
+
+bool is_allocated(void *addr);
+data *get_item(void *addr);
