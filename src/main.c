@@ -65,7 +65,7 @@ void *get_hole(size_t len, void *zzone, size_t zone_size) {
 		size_t curr_len = 0;
 		while (!is_allocated(v_zone+i+j)) {
 			j++;
-			curr_len+=sizeof(void*);
+			curr_len += sizeof(void*);
 			if (curr_len >= len) {
 				return v_zone+i;
 			}
@@ -137,6 +137,34 @@ void ft_free(void *addr) {
 	item->zone = 0;
 }
 
+void *ft_realloc(void *addr, size_t len) {
+	data *item = get_item(addr);
+	if (len == item->len)
+		return addr;
+
+	size_t zone_size =	item->zone == ztiny		? TINY :
+						item->zone == zmedium	? MEDIUM :
+												  0;
+	void *zzone =	item->zone == ztiny		? tiny :
+					item->zone == zmedium	? medium :
+											  NULL;
+	size_t i = 0;
+	size_t curr_len = item->len;
+	if (item->zone != zlarge && len > item->len) {
+		while (!is_allocated(item->addr+i) && item->addr+i < zzone+zone_size) {
+			i++;
+			curr_len += sizeof(void*);
+			if (curr_len >= len) {
+				item->len = len;
+				return addr;
+			}
+		}
+	}
+
+	ft_free(addr);
+	return ft_malloc(len);
+}
+
 void valgrind() {
 	int t = SUMMARY/sizeof(data);
 	size_t total = 0;
@@ -188,7 +216,7 @@ int main() {
 		ft_printf("test: [%s]\n", &test2[4092]);
 	}
 
-	ft_printf("\n");
+	ft_printf("MALLOC\n");
 	valgrind();
 	ft_printf("\n");
 	char *test3 = ft_malloc(10000);
@@ -197,10 +225,19 @@ int main() {
 	char *test4 = ft_malloc(20000);
 	valgrind();
 	ft_printf("\n");
+
+	ft_printf("REALLOC\n");
+	test2 = ft_realloc(test2, 80);
+	valgrind();
+	ft_printf("\n");
+	test2 = ft_realloc(test2, 90);
+	valgrind();
+	ft_printf("\n");
+
+	ft_printf("FREE\n");
 	ft_free(test1);
 	ft_free(test2);
 	ft_free(test3);
 	ft_free(test4);
-	ft_printf("\n");
 	valgrind();
 }
