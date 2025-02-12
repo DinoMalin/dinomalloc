@@ -1,5 +1,8 @@
 #include "malloc.h"
 
+//#define tiny summary->addr
+//#define medium (summary+1)->addr
+
 void *tiny = NULL;
 void *medium = NULL;
 
@@ -60,10 +63,12 @@ void *get_hole(size_t len, void *zzone, size_t zone_size) {
 			return NULL;
 		}
 
+		size_t j = 0;
 		size_t curr_len = 0;
-		while (!is_allocated(v_zone[curr_len+i])) {
-			curr_len++;
-			if (curr_len == len)
+		while (!is_allocated(v_zone[i+j])) {
+			j++;
+			curr_len+=sizeof(void*);
+			if (curr_len >= len)
 				return v_zone+i;
 	  	}
 	}
