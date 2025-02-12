@@ -44,7 +44,9 @@ bool add(data *item) {
 
 bool is_allocated(void *addr) {
 	int t = SUMMARY/sizeof(data);
-	for (int i = 2; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t; i++) {
+		if (!summary[i].addr)
+			continue;
 		if (addr >= summary[i].addr && addr <= summary[i].addr + summary[i].len) {
 			return true;
 		}
@@ -61,11 +63,12 @@ void *get_hole(size_t len, void *zzone, size_t zone_size) {
 
 		size_t j = 0;
 		size_t curr_len = 0;
-		while (!is_allocated(v_zone[i+j])) {
+		while (!is_allocated(v_zone+i+j)) {
 			j++;
 			curr_len+=sizeof(void*);
-			if (curr_len >= len)
+			if (curr_len >= len) {
 				return v_zone+i;
+			}
 	  	}
 	}
 	return NULL;
@@ -110,7 +113,7 @@ void *ft_malloc(size_t len) {
 
 data *get_item(void *addr) {
 	int t = SUMMARY/sizeof(data);
-	for (int i = 2; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t; i++) {
 		if (addr == summary[i].addr) {
 			return summary+i;
 		}
@@ -139,24 +142,24 @@ void valgrind() {
 	size_t total = 0;
 
 	ft_printf("TINY : 0x%p\n", tiny);
-	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == ztiny) {
+	for (int i = 2; i < t; i++) {
+		if (summary[i].zone == ztiny && summary[i].addr) {
 			DISPLAY(summary[i]);
 			total += summary[i].len;
 		}
 	}
 
 	ft_printf("MEDIUM : 0x%p\n", medium);
-	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == zmedium) {
+	for (int i = 2; i < t; i++) {
+		if (summary[i].zone == zmedium && summary[i].addr) {
 			DISPLAY(summary[i]);
 			total += summary[i].len;
 		}
 	}
 
 	ft_printf("LARGE : everything else\n");
-	for (int i = 2; i < t && summary[i].addr; i++) {
-		if (summary[i].zone == zlarge) {
+	for (int i = 2; i < t; i++) {
+		if (summary[i].zone == zlarge && summary[i].addr) {
 			DISPLAY(summary[i]);
 			total += summary[i].len;
 		}
@@ -167,6 +170,7 @@ void valgrind() {
 
 int main() {
 	char *test1 = ft_malloc(5);
+	char *test2 = ft_malloc(4095);
 
 	if (test1) {
 		test1[0] = 'd';
@@ -177,17 +181,26 @@ int main() {
 		ft_printf("test: [%s]\n", test1);
 	}
 
+	if (test2) {
+		test2[4092] = '4';
+		test2[4093] = '2';
+		test2[4094] = '\0';
+		ft_printf("test: [%s]\n", &test2[4092]);
+	}
+
+	ft_printf("\n");
 	valgrind();
 	ft_printf("\n");
-	char *test2 = ft_malloc(10000);
+	char *test3 = ft_malloc(10000);
 	valgrind();
 	ft_printf("\n");
-	char *test3 = ft_malloc(20000);
+	char *test4 = ft_malloc(20000);
 	valgrind();
 	ft_printf("\n");
 	ft_free(test1);
 	ft_free(test2);
 	ft_free(test3);
+	ft_free(test4);
 	ft_printf("\n");
 	valgrind();
 }
