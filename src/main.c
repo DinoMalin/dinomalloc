@@ -61,7 +61,7 @@ void *get_hole(size_t len, void *zzone, size_t zone_size) {
 		}
 
 		size_t curr_len = 0;
-		while (!is_allocated(v_zone[curr_len+i])) { // todo: check zone_size because segfault
+		while (!is_allocated(v_zone[curr_len+i])) {
 			curr_len++;
 			if (curr_len == len)
 				return v_zone+i;
@@ -156,18 +156,28 @@ void valgrind() {
 }
 
 int main() {
-	char *test = ft_malloc(5);
+	char *test1 = ft_malloc(5);
 
-	if (test) {
-		test[0] = 'd';
-		test[1] = 'i';
-		test[2] = 'n';
-		test[3] = 'o';
-		test[4] = '\0';
-		printf("test: [%s]\n", test);
+	if (test1) {
+		test1[0] = 'd';
+		test1[1] = 'i';
+		test1[2] = 'n';
+		test1[3] = 'o';
+		test1[4] = '\0';
+		ft_printf("test: [%s]\n", test1);
 	}
+
 	valgrind();
-	ft_free(test);
+	ft_printf("\n");
+	char *test2 = ft_malloc(10000);
+	valgrind();
+	ft_printf("\n");
+	char *test3 = ft_malloc(20000);
+	valgrind();
+	ft_printf("\n");
+	ft_free(test1);
+	ft_free(test2);
+	ft_free(test3);
 	ft_printf("\n");
 	valgrind();
 }
