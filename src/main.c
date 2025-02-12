@@ -1,130 +1,157 @@
 #include "malloc.h"
 
-#define TINY (size_t)getpagesize()
-#define MEDIUM (size_t)(getpagesize() * getpagesize())
-#define SUMMARY (getpagesize() * 2)
-
-#define PROT PROT_READ | PROT_WRITE
-#define MAP MAP_PRIVATE | MAP_ANONYMOUS
-
-#define ALLOC(addr, len) \
-	mmap(addr, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-
-#define CASTV(a) ((void**)a)
-#define CAST(a) ((int*)a)
-#define RETURN(res, len)							\
-	{												\
-		if (res) {									\
-			if (add_to_summary(res, len) == -1)		\
-				return NULL;						\
-			return res;								\
-		}											\
-	}
-
-#define NULL ((void*)0)
-
 void *tiny = NULL;
 void *medium = NULL;
-void *summary = NULL;
 
-int get_size(void *addr) {
-	for (int i = 0; i < SUMMARY; i+=2) {
-		void *this_addr = *CASTV(summary+i); // segfault ?
-		int size = *CAST(summary+i+1);
-		if (addr >= this_addr && addr <= this_addr + size)
-			return size;
+data *summary = NULL;
+
+bool init_zones() {
+	if (summary == NULL) {
+		summary = ALLOC(SUMMARY);
+		if (summary != MAP_FAILED)
+			ft_bzero(summary, SUMMARY);
+		else {
+			summary = NULL;
+			return NULL;
+		}
 	}
-	return 0;
+	if (tiny == NULL) {
+		tiny = ALLOC(TINY);
+		if (tiny == MAP_FAILED) {
+			tiny = NULL;
+			return false;
+		}
+	}
+	if (medium == NULL) {
+		medium = ALLOC(MEDIUM);
+		if (medium == MAP_FAILED) {
+			medium = NULL;
+			return false;
+		}
+	}
+	return true;
 }
 
-void *find_available_size(void *start, int zone, int target_size) {
-	int size = 0;
-	for (int i = 0; i < zone; i++) {
-		if (get_size(&start[i])) {
-			size = 0;
-			continue;
+bool add(data *item) {
+	int t = SUMMARY/sizeof(data);
+	for (int i = 0; i < t; i++) {
+		if (!summary[i].addr) {
+			summary[i] = *item;
+			return true;
 		}
-		size++;
-		if (size == target_size)
-			return &start[i];
+	}
+	return false;
+}
+
+bool is_allocated(void *addr) {
+	int t = SUMMARY/sizeof(data);
+	for (int i = 0; i < t && summary[i].addr; i++) {
+		if (addr >= summary[i].addr && addr <= summary[i].addr + summary[i].len) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void *get_hole(size_t len, void *zzone, size_t zone_size) {
+	void **v_zone = (void **)zzone;
+	for (size_t i = 0; i+1 < zone_size; i++) {
+		if (len + i >= zone_size) {
+			return NULL;
+		}
+
+		size_t curr_len = 0;
+		while (!is_allocated(v_zone[curr_len+i])) { // todo: check zone_size because segfault
+			curr_len++;
+			if (curr_len == len)
+				return v_zone+i;
+	  	}
 	}
 	return NULL;
 }
 
-int add_to_summary(void *addr, int size) {
-	for (int i = 0; i < SUMMARY; i+=2) {
-		if (!*CAST(summary+i)) {
-			*CASTV(summary+i) = addr;
-			*CAST(summary+i+1) = size;
-			return 1;
+void get_addr(data *item) {
+	if (item->zone == zlarge)
+		item->addr = ALLOC(item->len);
+
+	if (item->zone == ztiny) {
+		item->addr = get_hole(item->len, tiny, TINY);
+		if (!item->addr) {
+			item->zone = zmedium;
+			get_addr(item);
+		}
+	} else if (item->zone == zmedium) {
+		item->addr = get_hole(item->len, medium, MEDIUM);
+		if (!item->addr) {
+			item->zone = zlarge;
+			get_addr(item);
 		}
 	}
-	return -1;
 }
 
 void *ft_malloc(size_t len) {
-	if (!tiny || !medium) {
-		tiny = ALLOC(NULL, TINY);
-		medium = ALLOC(NULL, MEDIUM);
-		summary = ALLOC(NULL, SUMMARY);
-		if (summary != MAP_FAILED)
-			ft_bzero(summary, SUMMARY);
-	}
-	if (tiny == MAP_FAILED || medium == MAP_FAILED || summary == MAP_FAILED)
+	if (!init_zones()) {
 		return NULL;
-	if (!len)
-		return NULL;
-
-	len += sizeof(size_t);
-
-	if (len <= TINY) {
-		void *res = find_available_size(tiny, TINY, len);
-		RETURN(res, len);
 	}
-	if (len <= MEDIUM) {
-		void *res = find_available_size(medium, MEDIUM, len);
-		RETURN(res, len);
-	}
-
-	void *res = ALLOC(NULL, len);
-	if (res == MAP_FAILED)
+	data item = {
+		.len = len,
+		.zone =	len <= TINY		? ztiny		:
+				len <= MEDIUM	? zmedium	:
+								  zlarge,
+	};
+	get_addr(&item);
+	if (!add(&item)) {
 		return NULL;
-	RETURN(res, len);
+	}
+	return item.addr;
+}
+
+
+data *get_item(void *addr) {
+	int t = SUMMARY/sizeof(data);
+	for (int i = 0; i < t && summary[i].addr; i++) {
+		if (addr == summary[i].addr) {
+			return summary+i;
+		}
+	}
 	return NULL;
 }
 
 void ft_free(void *addr) {
-	if (addr)
-		munmap(addr, get_size(addr));
+	if (!addr)
+		return;
+
+	data *item = get_item(addr);
+	if (!item)
+		return;
+
+	if (item->addr != tiny && item->addr != medium)
+		munmap(item->addr, item->len);
+
+	item->addr = NULL;
+	item->len = 0;
+	item->zone = 0;
 }
 
-
 void valgrind() {
+	int t = SUMMARY/sizeof(data);
+
 	ft_printf("TINY - 0x%p\n", tiny);
-	for (int i = 0; i < SUMMARY; i++) {
-		void *addr = *CASTV(summary+i);
-		int size = *CAST(summary+i+1);
-		if (addr >= tiny && addr < tiny + TINY)
-			ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	for (int i = 0; i < t && summary[i].addr; i++) {
+		if (summary[i].zone == ztiny)
+			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
 
 	ft_printf("MEDIUM - 0x%p\n", medium);
-	for (int i = 0; i < SUMMARY; i++) {
-		void *addr = *CASTV(summary+i);
-		int size = *CAST(summary+i+1);
-		if (addr >= medium && addr < medium + MEDIUM)
-			ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	for (int i = 0; i < t && summary[i].addr; i++) {
+		if (summary[i].zone == zmedium)
+			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
 
-	ft_printf("LARGE - everything else\n", medium);
-	for (int i = 0; i < SUMMARY; i++) {
-		void *addr = *CASTV(summary+i);
-		int size = *CAST(summary+i+1);
-		if (addr >= tiny && addr < tiny + TINY)
-			continue;
-		if (addr >= medium && addr < medium + MEDIUM)
-			continue;
-		ft_printf("0x%p - 0x%p : %d bytes\n", addr, addr + size, size);
+	ft_printf("LARGE - everything else\n");
+	for (int i = 0; i < t && summary[i].addr; i++) {
+		if (summary[i].zone == zlarge)
+			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
 }
 
@@ -140,6 +167,7 @@ int main() {
 		printf("test: [%s]\n", test);
 	}
 	valgrind();
-
 	ft_free(test);
+	ft_printf("\n");
+	valgrind();
 }
