@@ -1,11 +1,7 @@
 #include "malloc.h"
 
-//#define tiny summary->addr
-//#define medium (summary+1)->addr
-
-void *tiny = NULL;
-void *medium = NULL;
-
+#define tiny summary->addr
+#define medium (summary+1)->addr
 data *summary = NULL;
 
 bool init_zones() {
@@ -37,7 +33,7 @@ bool init_zones() {
 
 bool add(data *item) {
 	int t = SUMMARY/sizeof(data);
-	for (int i = 0; i < t; i++) {
+	for (int i = 2; i < t; i++) {
 		if (!summary[i].addr) {
 			summary[i] = *item;
 			return true;
@@ -48,7 +44,7 @@ bool add(data *item) {
 
 bool is_allocated(void *addr) {
 	int t = SUMMARY/sizeof(data);
-	for (int i = 0; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t && summary[i].addr; i++) {
 		if (addr >= summary[i].addr && addr <= summary[i].addr + summary[i].len) {
 			return true;
 		}
@@ -114,7 +110,7 @@ void *ft_malloc(size_t len) {
 
 data *get_item(void *addr) {
 	int t = SUMMARY/sizeof(data);
-	for (int i = 0; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t && summary[i].addr; i++) {
 		if (addr == summary[i].addr) {
 			return summary+i;
 		}
@@ -142,19 +138,19 @@ void valgrind() {
 	int t = SUMMARY/sizeof(data);
 
 	ft_printf("TINY - 0x%p\n", tiny);
-	for (int i = 0; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t && summary[i].addr; i++) {
 		if (summary[i].zone == ztiny)
 			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
 
 	ft_printf("MEDIUM - 0x%p\n", medium);
-	for (int i = 0; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t && summary[i].addr; i++) {
 		if (summary[i].zone == zmedium)
 			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
 
 	ft_printf("LARGE - everything else\n");
-	for (int i = 0; i < t && summary[i].addr; i++) {
+	for (int i = 2; i < t && summary[i].addr; i++) {
 		if (summary[i].zone == zlarge)
 			ft_printf("0x%p - 0x%p\n", summary[i].addr, (void*)(summary[i].addr + summary[i].len));
 	}
