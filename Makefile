@@ -38,6 +38,7 @@ $(LIB): CFLAGS += -fPIC
 $(LIB): $(OBJS) $(LIBFT)
 	@echo "\e[32m✔ Linking source files...\e[37m"
 	@$(CC) -shared -o $@ $(OBJS) $(LFLAGS)
+	@ln -s $(LIB) libft_malloc.so
 	@echo "\e[32m✔ Shared object created.\e[37m"
 
 
