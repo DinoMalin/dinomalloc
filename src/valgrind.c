@@ -4,6 +4,11 @@ void show_alloc_mem() {
 	int t = SUMMARY/sizeof(data);
 	size_t total = 0;
 
+	if (summary == NULL) {
+		ft_printf("No memory allocated.\n");
+		return;
+	}
+
 	ft_printf("TINY : 0x%p\n", tiny);
 	for (int i = 2; i < t; i++) {
 		if (summary[i].zone == ztiny && summary[i].addr) {
