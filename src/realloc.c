@@ -1,6 +1,6 @@
 #include "malloc.h"
 
-void *ft_realloc(void *addr, size_t len) {
+void *realloc(void *addr, size_t len) {
 	data *item = get_item(addr);
 	if (len == item->len)
 		return addr;
@@ -24,6 +24,6 @@ void *ft_realloc(void *addr, size_t len) {
 		}
 	}
 
-	ft_free(addr);
-	return ft_malloc(len);
+	free(addr);
+	return malloc(len);
 }

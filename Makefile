@@ -12,7 +12,7 @@ CC = cc
 CFLAGS =	-Wall -Wextra -Werror -O3 -g \
 			-Iinclude -Ilib/include
 
-LFLAGS =	-Llib -lft
+LFLAGS =	-Llib -lft -Iinclude -Ilib/include
 LFLAGS_TEST = -L. -lft_malloc_$(HOSTTYPE) -Iinclude -Ilib/include
 
 SRC_DIR = src/
@@ -38,7 +38,7 @@ $(LIB): CFLAGS += -fPIC
 $(LIB): $(OBJS) $(LIBFT)
 	@echo "\e[32m✔ Linking source files...\e[37m"
 	@$(CC) -shared -o $@ $(OBJS) $(LFLAGS)
-	@ln -s $(LIB) libft_malloc.so
+	@ln -sf $(LIB) libft_malloc.so
 	@echo "\e[32m✔ Shared object created.\e[37m"
 
 

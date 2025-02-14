@@ -21,8 +21,6 @@
 		summary[i].len						\
 	);
 
-#define NULL ((void*)0)
-
 typedef enum {
 	ztiny,
 	zmedium,
@@ -37,10 +35,10 @@ typedef struct {
 
 extern data *summary;
 
-void *ft_malloc(size_t len);
-void ft_free(void *addr);
-void *ft_realloc(void *addr, size_t len);
-void valgrind();
+void *malloc(size_t len);
+void free(void *addr);
+void *realloc(void *addr, size_t len);
+void show_alloc_mem();
 
 bool is_allocated(void *addr);
 data *get_item(void *addr);

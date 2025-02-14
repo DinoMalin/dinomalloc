@@ -1,8 +1,8 @@
 #include "malloc.h"
 
 int main() {
-	char *test1 = ft_malloc(5);
-	char *test2 = ft_malloc(4095);
+	char *test1 = malloc(5);
+	char *test2 = malloc(4095);
 
 	if (test1) {
 		test1[0] = 'd';
@@ -21,27 +21,27 @@ int main() {
 	}
 
 	ft_printf("MALLOC\n");
-	valgrind();
+	show_alloc_mem();
 	ft_printf("\n");
-	char *test3 = ft_malloc(10000);
-	valgrind();
+	char *test3 = malloc(10000);
+	show_alloc_mem();
 	ft_printf("\n");
-	char *test4 = ft_malloc(20000);
-	valgrind();
+	char *test4 = malloc(20000);
+	show_alloc_mem();
 	ft_printf("\n");
 
 	ft_printf("REALLOC\n");
-	test2 = ft_realloc(test2, 80);
-	valgrind();
+	test2 = realloc(test2, 80);
+	show_alloc_mem();
 	ft_printf("\n");
-	test2 = ft_realloc(test2, 90);
-	valgrind();
+	test2 = realloc(test2, 90);
+	show_alloc_mem();
 	ft_printf("\n");
 
 	ft_printf("FREE\n");
-	ft_free(test1);
-	ft_free(test2);
-	ft_free(test3);
-	ft_free(test4);
-	valgrind();
+	free(test1);
+	free(test2);
+	free(test3);
+	free(test4);
+	show_alloc_mem();
 }

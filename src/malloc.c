@@ -79,7 +79,7 @@ void get_addr(data *item) {
 	}
 }
 
-void *ft_malloc(size_t len) {
+void *malloc(size_t len) {
 	if (!init_zones()) {
 		return NULL;
 	}

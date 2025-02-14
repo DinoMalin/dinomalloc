@@ -1,6 +1,6 @@
 #include "malloc.h"
 
-void valgrind() {
+void show_alloc_mem() {
 	int t = SUMMARY/sizeof(data);
 	size_t total = 0;
 

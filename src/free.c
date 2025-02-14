@@ -1,6 +1,6 @@
 #include "malloc.h"
 
-void ft_free(void *addr) {
+void free(void *addr) {
 	if (!addr)
 		return;
 
